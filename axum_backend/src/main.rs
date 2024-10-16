@@ -5,13 +5,14 @@ use axum::{
     Router,
 };
 use futures_util::{stream::StreamExt, stream::SplitSink, SinkExt};
+use serde::Serialize;
 use std::collections::HashMap;
 use std::sync::{Arc};
 use tokio::sync::{broadcast, Mutex as TokioMutex};
 use tower_http::services::fs::ServeDir;
 use uuid::Uuid;
 
-//#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 struct ChatMessage {
     user_id: String,
     message: String,
@@ -60,7 +61,7 @@ async fn chat_page() -> impl IntoResponse {
 async fn handle_connection(
     socket: WebSocket,
     clients: Clients,
-    tx: broadcast::Sender<String>,
+    tx: broadcast::Sender<ChatMessage>,
 ) {
     let (sender, mut receiver) = socket.split();
     let user_id = Uuid::new_v4().to_string();
@@ -74,7 +75,11 @@ async fn handle_connection(
         match message {
             Message::Text(text) => {
                 println!("Received message: {}", text);
-                let _ = tx.send(text.clone());
+                let chat_message = ChatMessage {
+                    user_id: user_id.clone(),
+                    message: text,
+                };
+                let _ = tx.send(chat_message);
             }
             Message::Close(_) => {
                 break; // Exit the loop on close message
@@ -93,30 +98,31 @@ async fn handle_connection(
 async fn handle_websocket(
     ws: WebSocketUpgrade,
     clients: Clients,
-    tx: broadcast::Sender<String>,
+    tx: broadcast::Sender<ChatMessage>,
 ) -> impl IntoResponse {
     ws.on_upgrade(move |socket| handle_connection(socket, clients, tx))
 }
 
 
 async fn broadcast_messages(
-    tx: broadcast::Sender<String>,
+    tx: broadcast::Sender<ChatMessage>,
     clients: Clients,
 ) {
     let mut rx = tx.subscribe();
 
     loop {
-        let message = match rx.recv().await {
+        let chat_message = match rx.recv().await {
             Ok(msg) => msg,
-            Err(_) => break, // Handle errors (e.g., if the sender is dropped)
+            Err(_) => break, // Handle errors (can happen if the sender is dropped)
         };
 
-        println!("Broadcasting message: {}", message);
+        println!("Broadcasting message: {}", chat_message.message);
 
         let clients = clients.lock().await;
         for (_id, client) in clients.iter() {
             let mut sender = client.lock().await;
-            let _ = sender.send(Message::Text(message.clone())).await;
+            let message_json = serde_json::to_string(&chat_message).unwrap();
+            let _ = sender.send(Message::Text(message_json)).await;
         }
     }
 }
@@ -124,7 +130,7 @@ async fn broadcast_messages(
 #[tokio::main]
 async fn main() {
     let clients = Arc::new(TokioMutex::new(HashMap::new()));
-    let (tx, _rx) = broadcast::channel::<String>(100);
+    let (tx, _rx) = broadcast::channel::<ChatMessage>(100);
 
     let app = Router::new()
         .route("/", get(chat_page))
