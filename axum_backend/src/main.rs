@@ -161,9 +161,11 @@ async fn main() {
             let tx = tx.clone();
             move |ws: WebSocketUpgrade| handle_websocket(ws, clients.clone(), tx.clone())
         }))
-        .fallback_service(ServeDir::new("/home/bjacklyn/sjsu_272/272_4/wasm_frontend/pkg"));
+        .fallback_service(ServeDir::new("/opt/rust_chat_app/wasm_frontend/pkg"));
 
     tokio::spawn(broadcast_messages(tx.clone(), clients));
+
+    println!("Running server at http://localhost:3000");
 
     // Run the Axum server
     axum::Server::bind(&"0.0.0.0:3000".parse().unwrap())
