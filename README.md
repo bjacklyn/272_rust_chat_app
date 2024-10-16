@@ -1,6 +1,11 @@
-# Build
+# Pull from dockerhub
 ```
-docker build . --tag rust_chat_app:1.0
+docker pull bjacklyn/rust-chat-app:1.0 # https://hub.docker.com/repository/docker/bjacklyn/rust-chat-app
+```
+
+# Alternatively build from source (optional)
+```
+docker build . --tag rust_chat_app:1.0 # NOTE: takes 20 mins to build
 ```
 
 # Run
