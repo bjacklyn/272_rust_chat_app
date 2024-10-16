@@ -5,12 +5,12 @@ docker pull bjacklyn/rust-chat-app:1.0 # https://hub.docker.com/repository/docke
 
 # Alternatively build from source (optional)
 ```
-docker build . --tag rust_chat_app:1.0 # NOTE: takes 20 mins to build
+docker build . --tag bjacklyn/rust-chat-app:1.0 # NOTE: takes 20 mins to build
 ```
 
 # Run
 ```
-docker run -it --network=host rust_chat_app:1.0 /opt/rust_chat_app/target/release/axum_backend
+docker run -it --network=host bjacklyn/rust-chat-app:1.0 /opt/rust_chat_app/target/release/axum_backend
 ```
 
 # Try it out
