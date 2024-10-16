@@ -31,13 +31,26 @@ async fn chat_page() -> impl IntoResponse {
     <title>Chat App</title>
     <style>
         #messages {
-            border: 1px solid black;
-            height: 300px;
+            border: 1px solid black; 
+            height: 300px; 
             overflow-y: scroll;
+            display: flex;
+            flex-direction: column;
         }
-        #input {
-            width: 100%;
+        .message {
+            padding: 5px;
+            border-radius: 5px;
+            margin: 5px;
         }
+        .self-message {
+            align-self: flex-end;
+            background-color: #d4edda; /* Light green */
+        }
+        .other-message {
+            align-self: flex-start;
+            background-color: #f8d7da; /* Light red */
+        }
+        #input { width: 100%; }
     </style>
 </head>
 <body>
