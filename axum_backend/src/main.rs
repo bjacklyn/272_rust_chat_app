@@ -63,8 +63,17 @@ async fn handle_connection(
     clients: Clients,
     tx: broadcast::Sender<ChatMessage>,
 ) {
-    let (sender, mut receiver) = socket.split();
+    let (mut sender, mut receiver) = socket.split();
     let user_id = Uuid::new_v4().to_string();
+
+    // Notify the client of their user ID
+    let initial_message = ChatMessage {
+        user_id: user_id.clone(),
+        message: "This is your user_id".to_string(),
+    };
+
+    // Send initial message
+    let _ = sender.send(Message::Text(serde_json::to_string(&initial_message).unwrap())).await;
 
     {
         let mut clients = clients.lock().await;
